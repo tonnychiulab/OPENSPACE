@@ -1,18 +1,11 @@
 from __future__ import annotations
 
 import csv
-from datetime import datetime
 from pathlib import Path
 
 from lace.config import CsvColumnMapping
 from lace.models import NormalizedEvent
-
-
-def _parse_ts(value: str) -> datetime:
-    text = value.strip()
-    if text.endswith("Z"):
-        text = text[:-1] + "+00:00"
-    return datetime.fromisoformat(text)
+from lace.timestamps import parse_timestamp
 
 
 def _optional_int(value: str | None) -> int | None:
@@ -38,11 +31,15 @@ def parse_csv(
         for row in reader:
             raw = ",".join(row.get(name, "") or "" for name in reader.fieldnames)
             try:
+                src_ip = row[columns.src_ip].strip()
+                dst_ip = row[columns.dst_ip].strip()
+                if not src_ip or not dst_ip:
+                    raise ValueError("src_ip and dst_ip are required")
                 events.append(
                     NormalizedEvent(
-                        timestamp=_parse_ts(row[columns.timestamp]),
-                        src_ip=row[columns.src_ip].strip(),
-                        dst_ip=row[columns.dst_ip].strip(),
+                        timestamp=parse_timestamp(row[columns.timestamp]),
+                        src_ip=src_ip,
+                        dst_ip=dst_ip,
                         dst_port=_optional_int(row.get(columns.dst_port)),
                         protocol=_optional_str(row.get(columns.protocol)),
                         bytes_out=int(row.get(columns.bytes_out) or 0),

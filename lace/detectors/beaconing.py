@@ -23,11 +23,7 @@ class BeaconingDetector(Detector):
     def detect(
         self, window: list[NormalizedEvent], config: BeaconingConfig
     ) -> list[Finding]:
-        conns = [
-            e
-            for e in window
-            if e.event_type not in ("auth_failure", "auth_success")
-        ]
+        conns = [e for e in window if e.event_type in ("conn", "beacon")]
         if len(conns) < config.min_samples:
             return []
         timestamps = [e.timestamp for e in conns]

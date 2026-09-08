@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import re
-from datetime import datetime
 from pathlib import Path
 
 from lace.models import NormalizedEvent
+from lace.timestamps import parse_timestamp
 
 # RFC5424: <PRI>VERSION TIMESTAMP HOSTNAME APP-NAME PROCID MSGID [SD] MSG
 RFC5424 = re.compile(
@@ -23,13 +23,6 @@ KV = re.compile(
 )
 
 
-def _parse_ts(value: str) -> datetime:
-    text = value.strip()
-    if text.endswith("Z"):
-        text = text[:-1] + "+00:00"
-    return datetime.fromisoformat(text)
-
-
 def _extract(message: str) -> dict[str, str]:
     found: dict[str, str] = {}
     for match in KV.finditer(message):
@@ -40,12 +33,14 @@ def _extract(message: str) -> dict[str, str]:
 def _from_fields(fields: dict[str, str], raw: str, fallback_ts: str) -> NormalizedEvent:
     src = fields.get("src_ip") or fields.get("src") or ""
     dst = fields.get("dst_ip") or fields.get("dst") or ""
+    if not src or not dst:
+        raise ValueError("syslog message missing src or dst")
     port_raw = fields.get("dst_port") or fields.get("dpt")
     proto = fields.get("protocol") or fields.get("proto")
     event_type = fields.get("event_type") or fields.get("type") or "conn"
     ts_text = fields.get("timestamp") or fallback_ts
     return NormalizedEvent(
-        timestamp=_parse_ts(ts_text),
+        timestamp=parse_timestamp(ts_text),
         src_ip=src,
         dst_ip=dst,
         dst_port=int(port_raw) if port_raw else None,

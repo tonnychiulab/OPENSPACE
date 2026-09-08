@@ -1,8 +1,8 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from lace.models import NormalizedEvent
 
-BASE = datetime(2026, 1, 15, 12, 0, 0)
+BASE = datetime(2026, 1, 15, 12, 0, 0, tzinfo=timezone.utc)
 
 
 def event(

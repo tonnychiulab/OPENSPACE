@@ -20,10 +20,23 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
     run = sub.add_parser("run", help="Analyze log files and emit alerts")
     run.add_argument("--config", required=True, help="Path to YAML settings")
-    run.add_argument("--input", nargs="+", required=True, help="One or more log files")
-    run.add_argument("--format", required=True, choices=("csv", "jsonl", "syslog"))
+    run.add_argument(
+        "--input",
+        nargs="+",
+        default=None,
+        help="One or more log files (default: config default_input)",
+    )
+    run.add_argument(
+        "--format",
+        required=True,
+        choices=("csv", "jsonl", "syslog"),
+    )
     run.add_argument("--ioc-list", default=None, help="Override IOC CSV path")
-    run.add_argument("--output", required=True, help="JSON alerts output path")
+    run.add_argument(
+        "--output",
+        default=None,
+        help="JSON alerts output path (default: config default_output)",
+    )
     return parser
 
 
@@ -45,9 +58,11 @@ def main(argv: list[str] | None = None) -> int:
         print(f"ioc error: {exc}", file=sys.stderr)
         return 1
 
+    inputs = args.input or [settings.default_input]
+    output = args.output or settings.default_output
     stats = ParseStats()
     events = []
-    for input_path in args.input:
+    for input_path in inputs:
         events.extend(
             parse(
                 input_path,
@@ -58,7 +73,7 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     _, alerts = analyze(events, settings, ioc_map)
-    write_json(alerts, args.output)
+    write_json(alerts, output)
     print_table(alerts)
     elapsed = time.perf_counter() - started
     print(

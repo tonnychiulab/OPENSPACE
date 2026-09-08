@@ -22,7 +22,7 @@ class BruteForceDetector(Detector):
         ]
         evidence: dict = {
             "failure_count": len(failures),
-            "dst_ip": window[0].dst_ip,
+            "dst_ip": failures[0].dst_ip,
         }
         severity = Severity.MEDIUM
         if success_after:

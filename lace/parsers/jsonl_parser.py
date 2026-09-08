@@ -1,19 +1,10 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
 from pathlib import Path
 
 from lace.models import NormalizedEvent
-
-
-def _parse_ts(value: object) -> datetime:
-    if isinstance(value, (int, float)):
-        return datetime.fromtimestamp(value)
-    text = str(value).strip()
-    if text.endswith("Z"):
-        text = text[:-1] + "+00:00"
-    return datetime.fromisoformat(text)
+from lace.timestamps import parse_timestamp
 
 
 def parse_jsonl(path: Path, stats) -> list[NormalizedEvent]:
@@ -27,11 +18,15 @@ def parse_jsonl(path: Path, stats) -> list[NormalizedEvent]:
                 payload = json.loads(stripped)
                 if not isinstance(payload, dict):
                     raise ValueError("JSON line must be an object")
+                src = payload.get("src_ip")
+                dst = payload.get("dst_ip")
+                if src is None or dst is None:
+                    raise ValueError("src_ip and dst_ip are required")
                 events.append(
                     NormalizedEvent(
-                        timestamp=_parse_ts(payload["timestamp"]),
-                        src_ip=str(payload["src_ip"]),
-                        dst_ip=str(payload["dst_ip"]),
+                        timestamp=parse_timestamp(payload["timestamp"]),
+                        src_ip=str(src),
+                        dst_ip=str(dst),
                         dst_port=payload.get("dst_port"),
                         protocol=payload.get("protocol"),
                         bytes_out=int(payload.get("bytes_out") or 0),
