@@ -1,0 +1,2 @@
+ip,tag,source
+203.0.113.9,known_c2,internal_blocklist
