@@ -1,0 +1,9 @@
+schema: spec-driven
+
+context: |
+  Offline Python CLI: LACE (Log Anomaly Correlation Engine).
+  Stack: Python 3.11+, pydantic v2, PyYAML, pytest.
+  Package lives in lace/; run with `lace run`.
+  Conventional commits. Tests: `python -m pytest -q`.
+  Domain: batch analysis of firewall/syslog logs (port scan, brute force,
+  beaconing CV, exfil volume) correlated into per-src_ip risk scores.

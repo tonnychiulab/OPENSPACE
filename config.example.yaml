@@ -1,0 +1,44 @@
+# LACE 範例設定 — 所有門檻都在這裡調，不要改程式碼。
+
+# 連接埠掃描：單一來源 → 單一目的，時間窗內相異目的埠數
+port_scan:
+  window_seconds: 60          # 滑動窗口長度（秒）
+  unique_dst_ports: 15        # 超過此相異埠數即觸發
+
+# 登入暴力破解：單一來源在窗口內的 auth_failure 次數
+brute_force:
+  window_seconds: 300         # 5 分鐘
+  failure_threshold: 10       # 超過此失敗次數即觸發；其後若出現 auth_success 則 severity=HIGH
+
+# 週期性回連：同一 (src_ip, dst_ip) 連線間隔的變異係數
+beaconing:
+  window_seconds: 600         # 需涵蓋最少樣本的時間跨度
+  cv_threshold: 0.15          # stdev(intervals) / mean(intervals) 低於此值視為規律
+  min_samples: 6              # 少於此連線次數不判定
+
+# 大量外送：單一來源在窗口內 bytes_out 加總
+exfil_volume:
+  window_seconds: 600         # 10 分鐘
+  bytes_threshold_mb: 500     # 門檻以 MB 計，內部轉成位元組比較
+
+# 關聯引擎：每種規則只計一次權重；命中 IOC 再加 ioc_bonus；封頂 100
+rule_weights:
+  port_scan: 25
+  brute_force: 30
+  beaconing: 35
+  exfil_volume: 40
+ioc_bonus: 20                 # 來源或目的 IP 命中本地清單時的加成
+
+ioc_list_path: tests/fixtures/sample_ioc_list.csv
+default_input: logs/events.jsonl
+default_output: alerts.json
+
+# CSV 欄位對應（輸入檔欄名 → 內部欄位）
+csv_columns:
+  timestamp: timestamp
+  src_ip: src_ip
+  dst_ip: dst_ip
+  dst_port: dst_port
+  protocol: protocol
+  bytes_out: bytes_out
+  event_type: event_type
